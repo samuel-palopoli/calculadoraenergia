@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Energética</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="calculator">
+        <h1>Calculadora Energética Residencial</h1>
+        
+        <form id="roomForm">
+            <label for="roomName">Nome do Cômodo:</label>
+            <input type="text" id="roomName" name="roomName" required>
+            <button type="button" onclick="addRoom()">Adicionar Cômodo</button>
+        </form>
+
+        <div id="roomsContainer"></div>
+
+        <div class="result">
+            <p id="totalResultText"></p>
+        </div>
+    </div>
+
+
+    <script>
+        
+        let rooms = [];
+
+        function addRoom() {
+            const roomName = document.getElementById('roomName').value;
+            if (roomName) {
+                const room = {
+                    name: roomName,
+                    equipments: []
+                };
+                rooms.push(room);
+                renderRooms();
+                document.getElementById('roomName').value = '';
+            } else {
+                alert('Por favor, insira o nome do cômodo.');
+            }
+        }
+
+        function addEquipment(roomIndex) {
+            const power = document.getElementById(`power-${roomIndex}`).value;
+            const hours = document.getElementById(`hours-${roomIndex}`).value;
+            const cost = document.getElementById(`cost-${roomIndex}`).value;
+            const equipmentName = document.getElementById(`equipmentName-${roomIndex}`).value;
+
+            if (power && hours && cost && equipmentName) {
+                const equipment = {
+                    name: equipmentName,
+                    power: parseFloat(power),
+                    hours: parseFloat(hours),
+                    cost: parseFloat(cost),
+                    energyConsumed: (parseFloat(power) * parseFloat(hours)) / 1000
+                };
+                rooms[roomIndex].equipments.push(equipment);
+                renderRooms();
+            } else {
+                alert('Por favor, preencha todos os campos do equipamento.');
+            }
+        }
+
+        function calculateRoomEnergy(roomIndex) {
+            const room = rooms[roomIndex];
+            let roomEnergy = 0;
+            let roomCost = 0;
+
+            room.equipments.forEach(equipment => {
+                roomEnergy += equipment.energyConsumed;
+                roomCost += equipment.energyConsumed * equipment.cost;
+            });
+
+            return {
+                energy: roomEnergy,
+                cost: roomCost
+            };
+        }
+
+        function renderRooms() {
+            const container = document.getElementById('roomsContainer');
+            container.innerHTML = '';
+            let totalEnergy = 0;
+            let totalCost = 0;
+
+            rooms.forEach((room, roomIndex) => {
+                const roomEnergyData = calculateRoomEnergy(roomIndex);
+                totalEnergy += roomEnergyData.energy;
+                totalCost += roomEnergyData.cost;
+
+                const roomDiv = document.createElement('div');
+                roomDiv.className = 'room';
+
+                let equipmentsHTML = '';
+                room.equipments.forEach(equipment => {
+                    equipmentsHTML += `<li>${equipment.name}: ${equipment.energyConsumed.toFixed(2)} kWh por dia</li>`;
+                });
+
+                roomDiv.innerHTML = `
+                    <h2>${room.name}</h2>
+                    <ul>${equipmentsHTML}</ul>
+                    <form>
+                        <label for="equipmentName-${roomIndex}">Nome do Equipamento:</label>
+                        <input type="text" id="equipmentName-${roomIndex}" required>
+                        
+                        <label for="power-${roomIndex}">Potência (Watts):</label>
+                        <input type="number" id="power-${roomIndex}" required>
+                        
+                        <label for="hours-${roomIndex}">Tempo de uso (horas por dia):</label>
+                        <input type="number" id="hours-${roomIndex}" required>
+                        
+                        <label for="cost-${roomIndex}">Custo por kWh (em R$):</label>
+                        <input type="number" id="cost-${roomIndex}" step="0.01" required>
+                        
+                        <button type="button" onclick="addEquipment(${roomIndex})">Resultado</button>
+                    </form>
+                    <p><strong>Consumo Total do Cômodo:</strong> ${roomEnergyData.energy.toFixed(2)} kWh por dia, Custo diário: R$ ${roomEnergyData.cost.toFixed(2)}</p>
+                `;
+                container.appendChild(roomDiv);
+            });
+
+            document.getElementById('totalResultText').textContent = 
+                `Consumo Total da Residência: ${totalEnergy.toFixed(2)} kWh por dia, Custo diário total: R$ ${totalCost.toFixed(2)}`;
+        }
+
+    </script>
+</body>
+</html>
